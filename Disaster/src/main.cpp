@@ -14,7 +14,7 @@ int main()
 
     SDL_Window* window = NULL;
 
-    window = SDL_CreateWindow("Disaster", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1187, 627, SDL_WINDOW_RESIZABLE /*| SDL_WINDOW_BORDERLESS*/);
+    window = SDL_CreateWindow("Disaster", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1187, 627, SDL_WINDOW_RESIZABLE | SDL_WINDOW_BORDERLESS);
 
     if(!window)
     {
@@ -41,7 +41,7 @@ int main()
 
         while(SDL_PollEvent(&e))
         {
-            if(e.type == SDL_QUIT)
+            if(e.type == SDL_QUIT || e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
             {
                 running = false;
                 break;

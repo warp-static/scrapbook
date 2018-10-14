@@ -27,9 +27,13 @@ int main()
     bool running = true;
     SDL_Event e;
 
-    int pos = 593;
+    float pos = 593;
+    float vel = 0, acc = 0;
+    bool accelerating;
 
     SDL_Rect rectangle = {pos, 610, 5, 8};
+
+    const Uint8 *keys = SDL_GetKeyboardState(NULL);
 
     while(running)
     {
@@ -42,31 +46,42 @@ int main()
                 running = false;
                 break;
             }
-
-            SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x22, 0x88);
-            SDL_RenderClear(renderer);
-
-            rectangle.x = pos;
-
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-            SDL_RenderFillRect(renderer, &rectangle);
-
-            SDL_RenderPresent(renderer);
-
-            if(e.type == SDL_KEYDOWN)
-            {
-                switch(e.key.keysym.sym)
-                {
-                    case SDLK_LEFT:
-                    pos -= 10;
-                    break;
-
-                    case SDLK_RIGHT:
-                    pos += 10;
-                    break;
-                }
-            }
         }
+
+        accelerating = false;
+        if (keys[SDL_SCANCODE_LEFT])
+        {
+            acc -= 0.1;
+            if(acc < -5) acc = -5;
+            accelerating = true;
+        }
+        if (keys[SDL_SCANCODE_RIGHT])
+        {
+            acc += 0.1;
+            if(acc > 5) acc = 5;
+            accelerating = true;
+        }
+        if(accelerating)
+        {
+            vel += acc;
+            if(vel < -15) vel = -15; else if(vel > 15) vel = 15;
+        }
+        else
+        {
+            acc = 0;
+            vel /= 1.2;
+        }
+        pos += vel;
+
+        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x22, 0x88);
+        SDL_RenderClear(renderer);
+
+        rectangle.x = pos;
+
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderFillRect(renderer, &rectangle);
+
+        SDL_RenderPresent(renderer);
 
         int frameTime = SDL_GetTicks() - starting_tick;
 

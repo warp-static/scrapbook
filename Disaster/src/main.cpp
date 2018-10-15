@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include "res_path.h"
+#include <vector>
 
 #define fps 60
 
@@ -30,6 +31,8 @@ int main()
     float pos = 593;
     float vel = 0, acc = 0;
     bool accelerating;
+
+    std::vector<SDL_Rect> bullets;
 
     SDL_Rect rectangle = {pos, 610, 5, 8};
 
@@ -73,13 +76,24 @@ int main()
         }
         pos += vel;
 
+        if (keys[SDL_SCANCODE_LCTRL]) bullets.push_back({(int)pos, 610, 1, 1});
+
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x22, 0x88);
         SDL_RenderClear(renderer);
 
-        rectangle.x = pos;
-
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderFillRect(renderer, &rectangle);
+
+        rectangle.x = pos;
+
+        if(!bullets.empty())
+        {
+            for(SDL_Rect bullet : bullets)
+            {
+                bullet.y -= 1;
+                SDL_RenderFillRect(renderer, &bullet);
+            }
+        }
 
         SDL_RenderPresent(renderer);
 

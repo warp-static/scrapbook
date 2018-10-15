@@ -33,6 +33,7 @@ int main()
     bool accelerating;
 
     std::vector<SDL_Rect> bullets;
+    unsigned int bullet_time = 0;
 
     SDL_Rect rectangle = {pos, 610, 5, 8};
 
@@ -76,7 +77,14 @@ int main()
         }
         pos += vel;
 
-        if (keys[SDL_SCANCODE_LCTRL]) bullets.push_back({(int)pos, 610, 1, 1});
+        if (keys[SDL_SCANCODE_LCTRL])
+        {
+            if(SDL_GetTicks() - bullet_time >= 300)
+            {
+                bullet_time = SDL_GetTicks();
+                bullets.push_back({(int)pos, 610, 1, 1});
+            }
+        }
 
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x22, 0x88);
         SDL_RenderClear(renderer);
@@ -88,10 +96,10 @@ int main()
 
         if(!bullets.empty())
         {
-            for(SDL_Rect bullet : bullets)
+            for(int i=0; i<bullets.size(); i++)
             {
-                bullet.y -= 1;
-                SDL_RenderFillRect(renderer, &bullet);
+                bullets[i].y -= 5;
+                SDL_RenderFillRect(renderer, &bullets[i]);
             }
         }
 

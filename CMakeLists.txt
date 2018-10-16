@@ -14,3 +14,5 @@ find_package(ASSIMP)
 include_directories(${SDL2_INCLUDE_DIRS} include)
 
 add_subdirectory(Disaster)
+
+add_subdirectory(Insanity)

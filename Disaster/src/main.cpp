@@ -1,10 +1,9 @@
 #include <iostream>
 #include <SDL2/SDL.h>
-#include <GL/glew.h>
 #include <fstream>
-#include <glm/glm.hpp>
 #include <string>
 #include "res_path.h"
+#include <vector>
 
 #define fps 60
 
@@ -16,93 +15,29 @@ int main()
 
     SDL_Window* window = NULL;
 
-    window = SDL_CreateWindow("Disaster", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1187, 627, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL /*| SDL_WINDOW_BORDERLESS*/);
+    window = SDL_CreateWindow("Disaster", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1187, 627, SDL_WINDOW_RESIZABLE | SDL_WINDOW_BORDERLESS);
 
     if(!window)
     {
         std::cout << "failed to create SDL window" << std::endl << SDL_GetError() << std::endl;
     }
 
-    SDL_GLContext glcontext = SDL_GL_CreateContext(window);
-
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED/* | SDL_RENDERER_PRESENTVSYNC*/);
-
-    GLenum res = glewInit();
-
-    glClearColor(0, 0, 0.1, 0.5);
-
-    GLuint program = glCreateProgram();
-    GLuint vShader = glCreateShader(GL_VERTEX_SHADER);
-    GLuint fShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-    std::string line;
-    std::ifstream vsFile;
-    std::string shaderPath = getResourcePath("Disaster") + "basicShader.vs";
-    vsFile.open(shaderPath.c_str());
-    std::string vsFileText;
-    while(vsFile.good())
-    {
-        getline(vsFile, line);
-        vsFileText.append(line + "\n");
-    }
-    std::ifstream fsFile;
-    shaderPath = getResourcePath("Disaster") + "basicShader.fs";
-    fsFile.open(shaderPath.c_str());
-    std::string fsFileText;
-    while(fsFile.good())
-    {
-        getline(fsFile, line);
-        fsFileText.append(line + "\n");
-    }
-
-    const GLchar* vsText[1];
-    const GLchar* fsText[1];
-    GLint vsTextLength[1];
-    GLint fsTextLength[1];
-    vsText[0] = vsFileText.c_str();
-    fsText[0] = fsFileText.c_str();
-    vsTextLength[0] = vsFileText.length();
-    fsTextLength[0] = fsFileText.length();
-
-    glShaderSource(vShader, 1, vsText, vsTextLength);
-    glShaderSource(fShader, 1, fsText, fsTextLength);
-    glCompileShader(vShader);
-    glCompileShader(fShader);
-
-    glAttachShader(program, vShader);
-    glAttachShader(program, fShader);
-
-    glBindAttribLocation(program, 0, "position");
-
-    glLinkProgram(program);
-    glValidateProgram(program);
-    glUseProgram(program);
-
-    glm::vec3 triangle[] = {
-        glm::vec3(-0.5, -0.5, 0),
-        glm::vec3(0, 0.5, 0),
-        glm::vec3(0.5, -0.5, 0)
-    };
-    GLuint vertexArray;
-    GLuint vertexBuffers[1];
-    unsigned int drawCount = 3;
-    glGenVertexArrays(1, &vertexArray);
-    glBindVertexArray(vertexArray);
-
-    glGenBuffers(1, vertexBuffers);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    glBindVertexArray(0);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, 1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     unsigned int starting_tick;
     bool running = true;
     SDL_Event e;
 
-    int pos = 593;
+    float pos = 593;
+    float vel = 0, acc = 0;
+    bool accelerating;
+
+    std::vector<SDL_Rect> bullets;
+    unsigned int bullet_time = 0;
+
+    SDL_Rect rectangle = {pos, 610, 5, 8};
+
+    const Uint8 *keys = SDL_GetKeyboardState(NULL);
 
     while(running)
     {
@@ -110,41 +45,65 @@ int main()
 
         while(SDL_PollEvent(&e))
         {
-            if(e.type == SDL_QUIT)
+            if(e.type == SDL_QUIT || e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
             {
                 running = false;
                 break;
             }
-            glClear(GL_COLOR_BUFFER_BIT);
+        }
 
-            glBindVertexArray(vertexArray);
-            glDrawArrays(GL_TRIANGLES, 0, drawCount);
-            glBindVertexArray(0);
+        accelerating = false;
+        if (keys[SDL_SCANCODE_LEFT])
+        {
+            acc -= 0.1;
+            if(acc < -5) acc = -5;
+            accelerating = true;
+        }
+        if (keys[SDL_SCANCODE_RIGHT])
+        {
+            acc += 0.1;
+            if(acc > 5) acc = 5;
+            accelerating = true;
+        }
+        if(accelerating)
+        {
+            vel += acc;
+            if(vel < -15) vel = -15; else if(vel > 15) vel = 15;
+        }
+        else
+        {
+            acc = 0;
+            vel /= 1.2;
+        }
+        pos += vel;
 
-            SDL_GL_SwapWindow(window);
-
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-            // SDL_RenderClear(renderer);
-
-            SDL_Rect rectangle = {pos, 610, 5, 8};
-            SDL_RenderFillRect(renderer, &rectangle);
-
-            SDL_RenderPresent(renderer);
-
-            if(e.type == SDL_KEYDOWN)
+        if (keys[SDL_SCANCODE_LCTRL])
+        {
+            if(SDL_GetTicks() - bullet_time >= 300)
             {
-                switch(e.key.keysym.sym)
-                {
-                    case SDLK_LEFT:
-                    pos -= 10;
-                    break;
-
-                    case SDLK_RIGHT:
-                    pos += 10;
-                    break;
-                }
+                bullet_time = SDL_GetTicks();
+                bullets.push_back({(int)pos, 610, 1, 1});
             }
         }
+
+        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x22, 0x88);
+        SDL_RenderClear(renderer);
+
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderFillRect(renderer, &rectangle);
+
+        rectangle.x = pos;
+
+        if(!bullets.empty())
+        {
+            for(int i=0; i<bullets.size(); i++)
+            {
+                bullets[i].y -= 5;
+                SDL_RenderFillRect(renderer, &bullets[i]);
+            }
+        }
+
+        SDL_RenderPresent(renderer);
 
         int frameTime = SDL_GetTicks() - starting_tick;
 
@@ -154,18 +113,7 @@ int main()
         }
     }
 
-    glDeleteVertexArrays(1, &vertexArray);
-
-    glDetachShader(program, vShader);
-    glDeleteShader(vShader);
-    glDetachShader(program, fShader);
-    glDeleteShader(fShader);
-
-    glDeleteProgram(program);
-
     SDL_DestroyRenderer(renderer);
-
-    SDL_GL_DeleteContext(glcontext);
 
     SDL_DestroyWindow(window);
 

@@ -4,10 +4,17 @@
 #include <string>
 #include "res_path.h"
 #include <vector>
+#include <random>
+#include <algorithm>
 
 #define fps 60
 
 #undef main
+
+bool compareYPos(SDL_Rect obj_a, SDL_Rect obj_b)
+{
+    return (obj_a.y - obj_a.w / 2) < (obj_b.y - obj_b.w / 2);
+}
 
 int main()
 {
@@ -35,7 +42,12 @@ int main()
     std::vector<SDL_Rect> bullets;
     unsigned int bullet_time = 0;
 
-    SDL_Rect rectangle = {pos, 610, 5, 8};
+    std::vector<SDL_Rect> asteroids;
+    unsigned int asteroid_time = 0;
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution(0,1187);
+
+    SDL_Rect rectangle = {(int)(pos - 2.5), 610, 5, 8};
 
     const Uint8 *keys = SDL_GetKeyboardState(NULL);
 
@@ -82,8 +94,15 @@ int main()
             if(SDL_GetTicks() - bullet_time >= 300)
             {
                 bullet_time = SDL_GetTicks();
-                bullets.push_back({(int)pos, 610, 1, 1});
+                bullets.push_back({(int)(pos - 0.5), 610, 1, 1});
             }
+        }
+
+        int asteroid_pos = distribution(generator);
+        if(SDL_GetTicks() - asteroid_time >= 300)
+        {
+            asteroid_time = SDL_GetTicks();
+            asteroids.push_back({(int)(asteroid_pos - 7.5), 0, 15, 15});
         }
 
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x22, 0x88);
@@ -92,7 +111,7 @@ int main()
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderFillRect(renderer, &rectangle);
 
-        rectangle.x = pos;
+        rectangle.x = (int)(pos - 2.5);
 
         if(!bullets.empty())
         {
@@ -100,6 +119,32 @@ int main()
             {
                 bullets[i].y -= 5;
                 SDL_RenderFillRect(renderer, &bullets[i]);
+            }
+            // todo: we only need to sort them if there's more than one and the array has changed
+            std::sort(bullets.begin(), bullets.end(), compareYPos);
+        }
+
+        if(!asteroids.empty())
+        {
+            for(int i=0; i<asteroids.size(); i++)
+            {
+                asteroids[i].y += 5;
+                SDL_RenderFillRect(renderer, &asteroids[i]);
+            }
+            // todo: we only need to sort them if there's more than one and the array has changed
+            std::sort(asteroids.begin(), asteroids.end(), compareYPos);
+        }
+
+        for(int i=0; i<bullets.size(); i++)
+        {
+            for(int j=0; j<asteroids.size(); j++)
+            {
+                if((bullets[i].y + bullets[i].h / 2) < (asteroids[j].y - asteroids[j].h / 2))
+                {
+                    break;
+                }
+                int b = bullets[i].x + bullets[i].w / 2;
+                remove_if(asteroids.begin(), asteroids.end(), [b](SDL_Rect asteroid){return b > asteroid.x - asteroid.w / 2;});
             }
         }
 

@@ -144,7 +144,7 @@ int main()
                     break;
                 }
                 int a = bullets[i].x + bullets[i].w / 2, b = bullets[i].x - bullets[i].w / 2;
-                remove_if(asteroids.begin(), asteroids.end(), [a, b](SDL_Rect asteroid){return a > asteroid.x - asteroid.w / 2 && b < asteroid.x + asteroid.w / 2;});
+                remove_if(asteroids.begin(), asteroids.end(), [a, b](SDL_Rect asteroid){return a >= asteroid.x - asteroid.w / 2 && b <= asteroid.x + asteroid.w / 2;});
             }
         }
 

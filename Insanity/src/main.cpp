@@ -139,12 +139,12 @@ int main()
         {
             for(int j=0; j<asteroids.size(); j++)
             {
-                if((bullets[i].y + bullets[i].h / 2) < (asteroids[j].y - asteroids[j].h / 2))
+                if(bullets[i].y + bullets[i].h / 2 < asteroids[j].y - asteroids[j].h / 2)
                 {
                     break;
                 }
-                int b = bullets[i].x + bullets[i].w / 2;
-                remove_if(asteroids.begin(), asteroids.end(), [b](SDL_Rect asteroid){return b > asteroid.x - asteroid.w / 2;});
+                int a = bullets[i].x + bullets[i].w / 2, b = bullets[i].x - bullets[i].w / 2;
+                remove_if(asteroids.begin(), asteroids.end(), [a, b](SDL_Rect asteroid){return a > asteroid.x - asteroid.w / 2 && b < asteroid.x + asteroid.w / 2;});
             }
         }
 
